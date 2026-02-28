@@ -1,204 +1,332 @@
-# 📡 TelecomX – Predicción de Cancelación de Clientes (Churn)
+# 📡 TelecomX — Parte 2: Predicción de Cancelación de Clientes (Churn)
 
-> **Challenge de Ciencia de Datos | Parte 1 + Parte 2**  
-> Análisis exploratorio, modelado predictivo y estrategias de retención para una empresa de telecomunicaciones.
-
----
-
-## 📋 Descripción del Proyecto
-
-Este proyecto forma parte del **Challenge TelecomX** de Alura LATAM, desarrollado en dos etapas:
-
-- **Parte 1:** Análisis Exploratorio de Datos (EDA) — entender el comportamiento histórico del churn.
-- **Parte 2:** Modelado Predictivo con Machine Learning — construir modelos capaces de anticipar qué clientes tienen mayor riesgo de cancelar sus servicios.
-
-El objetivo final es proporcionar a TelecomX una herramienta basada en datos que le permita **anticiparse a la pérdida de clientes** e implementar estrategias de retención personalizadas.
+![Python](https://img.shields.io/badge/Python-3.10+-blue?logo=python&logoColor=white)
+![Scikit-learn](https://img.shields.io/badge/Scikit--learn-1.3+-orange?logo=scikit-learn&logoColor=white)
+![Pandas](https://img.shields.io/badge/Pandas-2.0+-150458?logo=pandas&logoColor=white)
+![Jupyter](https://img.shields.io/badge/Notebook-Jupyter-F37626?logo=jupyter&logoColor=white)
+![Status](https://img.shields.io/badge/Status-Completo-brightgreen)
 
 ---
 
-## 📁 Estructura del Repositorio
+## 📌 Propósito del Análisis
+
+Este proyecto corresponde a la **segunda etapa del Challenge TelecomX** de Alura LATAM. El objetivo principal es **predecir el churn (cancelación) de clientes** de una empresa de telecomunicaciones, utilizando variables relevantes del perfil del cliente, su tipo de contrato y sus patrones de consumo.
+
+La empresa TelecomX enfrenta una tasa de cancelación del **25.72%**, lo que representa una pérdida significativa de ingresos. A través del modelado predictivo con Machine Learning, buscamos:
+
+- Identificar **qué clientes tienen mayor riesgo de cancelar** antes de que lo hagan
+- Determinar **qué factores influyen más** en la decisión de cancelación
+- Proveer **insights accionables** para que el equipo de retención pueda intervenir de forma proactiva y personalizada
+
+> Este proyecto es la continuación directa de la **Parte 1 (EDA)**, donde se realizó el análisis exploratorio y la limpieza inicial de los datos. Se recomienda revisar `TelecomX_LATAM.ipynb` primero para obtener el contexto completo.
+
+---
+
+## 📁 Estructura del Proyecto
 
 ```
 telecomx-churn/
 │
-├── TelecomX_LATAM.ipynb          # Parte 1: EDA y análisis exploratorio
-├── TelecomX_Parte2_ML.ipynb      # Parte 2: Modelado predictivo con ML
-└── README.md                     # Este archivo
+├── 📓 TelecomX_LATAM.ipynb           # Parte 1: EDA y limpieza de datos
+├── 📓 TelecomX_Parte2_ML.ipynb       # Parte 2: Modelado predictivo (ML) ← principal
+│
+├── 📊 visualizaciones/
+│   ├── 01_proporcion_churn.png        # Distribución y desbalance de clases
+│   ├── 02_correlacion_heatmap.png     # Heatmap de correlación de variables
+│   ├── 03_tenure_vs_churn.png         # Análisis Tenure × Cancelación
+│   ├── 04_gasto_vs_churn.png          # Análisis Gasto × Cancelación
+│   ├── 05_evaluacion_modelos.png      # Matrices de confusión + curvas ROC
+│   ├── 06_coeficientes_logistica.png  # Importancia de variables (Reg. Logística)
+│   ├── 07_importancia_rf.png          # Importancia de variables (Random Forest)
+│   └── 08_comparacion_importancia.png # Comparación entre modelos
+│
+└── README.md                          # Este archivo
 ```
+
+> 💡 Los gráficos se generan automáticamente al ejecutar el notebook y quedan guardados en el directorio de trabajo.
 
 ---
 
 ## 🗂️ Dataset
 
-- **Fuente:** [TelecomX Data – GitHub Alura LATAM](https://raw.githubusercontent.com/ingridcristh/challenge2-data-science-LATAM/main/TelecomX_Data.json)
-- **Formato:** JSON con columnas anidadas (customer, phone, internet, account)
-- **Tamaño:** 7,267 clientes | 29 variables tras el desempaquetado
-- **Variable objetivo:** `Churn` (1 = canceló, 0 = activo)
-- **Churn rate base:** 25.72%
+| Atributo | Detalle |
+|----------|---------|
+| **Fuente** | [TelecomX Data — Alura LATAM GitHub](https://raw.githubusercontent.com/ingridcristh/challenge2-data-science-LATAM/main/TelecomX_Data.json) |
+| **Formato original** | JSON con columnas anidadas |
+| **Clientes** | 7,267 |
+| **Variables (post-procesamiento)** | 29 |
+| **Variable objetivo** | `Churn` (1 = canceló, 0 = activo) |
+| **Churn rate** | 25.72% |
+
+Los datos se cargan directamente desde la URL en el notebook, sin necesidad de descarga previa.
 
 ---
 
-## 🔍 Parte 1 — Análisis Exploratorio de Datos (EDA)
+## 🔢 Clasificación de Variables
 
-### Proceso
+### Variables Numéricas (continuas)
 
-**Extracción y Transformación**
-- Carga del JSON desde la API de GitHub
-- Desempaquetado de columnas anidadas (`customer`, `phone`, `internet`, `account`)
-- Conversión de tipos de datos (`TotalCharges` a numérico)
-- Tratamiento de valores nulos y duplicados
-- Estandarización de la variable `Churn` (Yes/No → 1/0)
+| Variable | Descripción |
+|----------|-------------|
+| `tenure` | Meses de permanencia del cliente |
+| `MonthlyCharges` | Cargo mensual en dólares |
+| `TotalCharges` | Cargo total acumulado en dólares |
 
-**Análisis Realizado**
-- Distribución general del churn (25.72% de cancelaciones)
-- Análisis demográfico: género, adultos mayores, pareja, dependientes
-- Análisis de servicios: tipo de internet, líneas telefónicas, servicios adicionales
-- Análisis de contrato: tipo, método de pago, facturación electrónica
-- Análisis temporal: tenure (meses de contrato) y su relación con el churn
-- Correlación entre variables numéricas y la cancelación
+Estas variables fueron **estandarizadas con StandardScaler** para el modelo de Regresión Logística (media = 0, desviación estándar = 1), ya que este algoritmo es sensible a la escala. Para Random Forest no se aplicó normalización, dado que los árboles de decisión no dependen de la magnitud de los datos.
 
-### Principales Hallazgos
+### Variables Categóricas Binarias (Yes/No → 1/0)
 
-| Factor | Churn Rate | Insight |
-|--------|-----------|---------|
-| Primeros 6 meses de contrato | 51.41% | Período crítico de fuga |
-| Contrato Month-to-month | 41.32% | Sin compromiso = mayor riesgo |
-| Pago con Electronic Check | 43.80% | Método manual = menor lealtad |
-| Internet Fiber Optic | 40.56% | Problemas de satisfacción |
-| Senior Citizens | 40.27% | Grupo vulnerable |
-| Contrato Two-year | 2.75% | Mayor retención |
-| 4+ años de contrato | 9.22% | Lealtad consolidada |
+`Partner` · `Dependents` · `PhoneService` · `MultipleLines` · `OnlineSecurity` · `OnlineBackup` · `DeviceProtection` · `TechSupport` · `StreamingTV` · `StreamingMovies` · `PaperlessBilling`
+
+También: `gender` → Male = 1, Female = 0
+
+### Variables Categóricas con Múltiples Categorías (One-Hot Encoding)
+
+| Variable | Categorías |
+|----------|-----------|
+| `InternetService` | DSL / Fiber optic / No |
+| `Contract` | Month-to-month / One year / Two year |
+| `PaymentMethod` | Electronic check / Mailed check / Bank transfer / Credit card |
+
+Se aplicó **One-Hot Encoding** creando una columna binaria por cada categoría. No se usó `drop_first` para mantener transparencia en la interpretación de los coeficientes.
 
 ---
 
-## 🤖 Parte 2 — Modelado Predictivo (Machine Learning)
+## 🛠️ Proceso de Preparación de Datos
 
-### a) Preparación de los Datos
+### 1. Carga y desempaquetado
 
-**Eliminación de columnas irrelevantes**  
-Se eliminó `customerID` por ser un identificador único que no aporta valor predictivo y puede causar overfitting.
+El JSON original tiene columnas anidadas (`customer`, `phone`, `internet`, `account`). Se utilizó `pd.json_normalize()` para expandir cada columna en sus campos individuales y consolidar todo en un único DataFrame.
 
-**Verificación de proporción de Churn**  
-Se detectó un dataset desbalanceado: 74.28% No Churn vs 25.72% Churn (ratio 2.89:1). Se aplicó **Oversampling** (Random Oversampling) exclusivamente sobre el set de entrenamiento para evitar data leakage.
+### 2. Limpieza
 
-**Encoding de variables categóricas**  
-- Variables binarias (Yes/No): codificadas como 1/0
-- Variables con múltiples categorías (`Contract`, `PaymentMethod`, `InternetService`): **One-Hot Encoding**
-- `gender`: Male=1, Female=0
+- `TotalCharges` convertida a numérico (contenía espacios en blanco para clientes nuevos → reemplazados por 0)
+- `Churn` mapeada de Yes/No a 1/0
+- Eliminación de duplicados y filas con `Churn` nulo
 
-**Normalización / Estandarización**  
-Se crearon dos versiones del dataset con justificación técnica:
-- **Con StandardScaler** (media=0, std=1): para Regresión Logística, sensible a la escala de los datos
-- **Sin normalizar**: para Random Forest, basado en árboles y no sensible a la escala
+### 3. Eliminación de columnas irrelevantes
 
-**Balanceo de Clases**  
-Oversampling aplicado solo al conjunto de entrenamiento para que el test refleje la distribución real del negocio.
+Se eliminó `customerID` por ser un identificador único que no aporta información predictiva y puede introducir ruido en los modelos.
 
-### b) Correlación y Selección de Variables
+### 4. Verificación del desbalance de clases
 
-- **Matriz de correlación** completa con heatmap de las top 12 variables
-- **Análisis dirigido Tenure × Churn:** boxplot, histograma y tasa de churn por rango de meses
-- **Análisis dirigido Gasto × Churn:** boxplot de MonthlyCharges y TotalCharges + scatter plot
+```
+No Churn (0):  5,394 clientes  →  74.28%
+Churn    (1):  1,869 clientes  →  25.72%
+Ratio de desbalance: 2.89 : 1
+```
 
-### c) Modelos Entrenados
+Se detectó un dataset desbalanceado. Para corregirlo se aplicó **Oversampling (Random Oversampling)** sobre la clase minoritaria (Churn = 1), duplicando muestras aleatorias hasta igualar la clase mayoritaria.
 
-| | Regresión Logística | Random Forest |
-|--|--------------------|----|
-| **Normalización** | ✅ Sí (StandardScaler) | ❌ No necesaria |
-| **Accuracy (test)** | ~0.75 | ~0.80 |
-| **Precision** | ~0.49 | ~0.58 |
-| **Recall** | ~0.80 | ~0.73 |
-| **F1-Score** | ~0.61 | ~0.64 |
-| **ROC-AUC** | ~0.84 | ~0.86 |
+> ⚠️ El balanceo se aplica **exclusivamente al set de entrenamiento**, para que el set de prueba conserve la distribución real del negocio y las métricas sean representativas del mundo real.
 
-**¿Cuál modelo es mejor?**
+### 5. División Train / Test
 
-- **Random Forest** obtiene mejor ROC-AUC y F1-Score → recomendado para scoring general
-- **Regresión Logística** obtiene mayor Recall → más efectiva para capturar el máximo de churners posibles
+```python
+train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
+```
 
-En churn, el Recall es especialmente valioso: es más costoso no detectar a un cliente que se va (falso negativo) que alertar erróneamente a uno que se queda (falso positivo).
+| Conjunto | Tamaño | Proporción |
+|----------|--------|-----------|
+| Entrenamiento | ~5,813 muestras | 80% |
+| Prueba | ~1,454 muestras | 20% |
 
-**Análisis de Overfitting / Underfitting**
+Se utilizó `stratify=y` para garantizar que ambos conjuntos mantengan la misma proporción de clases que el dataset original.
 
-- *Regresión Logística:* diferencia Train-Test < 3% → sin overfitting, buena generalización gracias a la regularización L2
-- *Random Forest:* leve overfitting esperado (~10%) → mitigado con `max_depth=12` y `min_samples_leaf=5`
+### 6. Justificaciones de las decisiones de modelado
 
-### d) Importancia de Variables
-
-**Regresión Logística — Coeficientes:**
-Los coeficientes positivos más altos corresponden a contratos month-to-month, Fiber Optic y Electronic Check. Los más negativos (protección) a contratos anuales y tenure alto.
-
-**Random Forest — Gini Importance:**
-Las variables con mayor importancia son `tenure`, `MonthlyCharges`, `TotalCharges`, seguidas por el tipo de contrato y el método de pago.
-
-Ambos modelos coinciden en las mismas variables clave, lo que refuerza la solidez de los hallazgos.
+| Decisión | Justificación |
+|----------|--------------|
+| Normalizar solo para Regresión Logística | Los modelos lineales calculan coeficientes sobre la magnitud de los datos. Sin escalar, variables como `TotalCharges` (~$2,000) dominarían sobre `SeniorCitizen` (0 o 1) |
+| No normalizar para Random Forest | Los árboles dividen por umbrales relativos, no por distancias; la escala no afecta el resultado |
+| Oversampling en lugar de undersampling | Con ~7,000 filas, el undersampling reduciría demasiado los datos de entrenamiento, perdiendo información valiosa |
+| Balanceo solo en train | Aplicar balanceo al test contaminaría las métricas, haciendo que no reflejen el desempeño real del modelo |
+| `max_depth=12` en Random Forest | Limita la complejidad para reducir overfitting sin sacrificar capacidad predictiva |
+| `C=1.0` en Regresión Logística | Regularización L2 estándar que controla el sobreajuste sin restringir demasiado los coeficientes |
 
 ---
 
-## 💡 Conclusiones y Estrategias de Retención
+## 📊 Gráficos e Insights del Análisis Exploratorio
 
-### Factores principales que causan el churn
+### 1. Distribución del Churn — Desbalance de Clases
 
-1. **Tenure bajo** — los primeros 6 meses son críticos (51% de cancelación)
-2. **Contratos sin compromiso** — month-to-month tiene 41% de churn vs 2.75% en two-year
-3. **Fiber Optic** — 40.56% de churn, posiblemente por baja satisfacción con la calidad
-4. **Método de pago manual** — Electronic Check: 43.80% vs 14-16% en pagos automáticos
-5. **Ausencia de servicios adicionales** — sin Tech Support ni Online Security: ~30% churn
+> *Archivo: `01_proporcion_churn.png`*
 
-### Estrategias propuestas
+El 74.28% de los clientes permanece activo y solo el 25.72% cancela. Este desbalance es suficiente para sesgar los modelos hacia la clase mayoritaria si no se trata, generando alta accuracy pero bajo Recall sobre los churners.
 
-| Prioridad | Acción | Impacto Estimado |
-|-----------|--------|-----------------|
-| 🔴 1 | Score de riesgo predictivo en producción | Base para todas las acciones |
-| 🔴 2 | Programa de onboarding intensivo (meses 0-6) | ~260 clientes retenidos/mes |
-| 🟡 3 | Campaña de conversión a contratos anuales | -7-8 puntos en churn global |
-| 🟡 4 | Migración a pagos automáticos (descuento 5%) | ~130 clientes retenidos/mes |
-| 🟡 5 | Auditoría de calidad Fiber Optic | ~310 clientes retenidos/mes |
-| 🟢 6 | Bundling de servicios adicionales | ~180 clientes retenidos/mes |
+**💡 Insight:** Sin tratamiento del desbalance, el modelo aprende a predecir siempre "No Churn" y obtiene 74% de accuracy sin detectar casi ningún cliente que cancela. El Oversampling es esencial para que aprenda los patrones reales de cancelación.
 
-**Proyección conservadora (50% de adopción):**
-- ~410 clientes retenidos por mes
-- ~$320,000/mes en ingresos protegidos (ARPU ~$65)
-- ROI anual estimado: ~$3.8M
+---
+
+### 2. Correlación de Variables con Churn
+
+> *Archivo: `02_correlacion_heatmap.png`*
+
+Variables con mayor correlación positiva (mayor riesgo de cancelación):
+
+| Variable | Correlación |
+|----------|:-----------:|
+| `Contract_Month-to-month` | +0.40 |
+| `Payment_Electronic check` | +0.30 |
+| `Internet_Fiber optic` | +0.31 |
+| `MonthlyCharges` | +0.19 |
+
+Variables con mayor correlación negativa (mayor retención):
+
+| Variable | Correlación |
+|----------|:-----------:|
+| `tenure` | −0.35 |
+| `Contract_Two year` | −0.30 |
+| `TotalCharges` | −0.20 |
+
+**💡 Insight:** El tipo de contrato y el tiempo de permanencia son los predictores más fuertes. Los clientes sin compromiso contractual y con poco tiempo en la empresa son el grupo de mayor riesgo.
+
+---
+
+### 3. Tenure × Churn — Tiempo de Contrato vs Cancelación
+
+> *Archivo: `03_tenure_vs_churn.png`*
+
+```
+Rango de Tenure     Churn Rate    Clientes
+────────────────────────────────────────────
+0 - 6 meses          51.41% ⚠️     1,525
+6 - 12 meses         34.71%           729
+12 - 24 meses        28.13%         1,045
+24 - 36 meses        20.86%           863
+36 - 48 meses        18.47%           785
+48 - 72 meses         9.22% ✅       2,309
+```
+
+- Clientes **con Churn**: tenure promedio = **17.98 meses** (mediana: 10 meses)
+- Clientes **sin Churn**: tenure promedio = **37.32 meses** (mediana: 37 meses)
+- Diferencia: **19.34 meses** menos en promedio
+
+**💡 Insight:** Los primeros 6 meses son el período crítico con más del 51% de cancelaciones. Un cliente que supera el primer año tiene una probabilidad de churn significativamente menor. Esto señala la necesidad urgente de un programa de onboarding y retención temprana.
+
+---
+
+### 4. Gasto × Churn — Cargos vs Cancelación
+
+> *Archivo: `04_gasto_vs_churn.png`*
+
+| Métrica | Clientes con Churn | Clientes sin Churn |
+|---------|:-----------------:|:-----------------:|
+| Monthly Charges promedio | ~$74.44 | ~$61.27 |
+| Total Charges promedio | ~$1,531 | ~$2,555 |
+
+El scatter plot Tenure vs MonthlyCharges revela un patrón claro: los churners se concentran en la zona de **bajo tenure + altos cargos mensuales**, mientras que los clientes leales tienen mayor tenure con una distribución de cargos más variada.
+
+**💡 Insight:** No es el gasto total lo que impulsa el churn, sino la relación entre el precio percibido y el valor recibido durante los primeros meses. Un cliente nuevo que paga mucho y aún no percibe el valor del servicio tiene alto riesgo de abandonar.
+
+---
+
+## 🤖 Modelos y Resultados
+
+### Comparación de Métricas
+
+| Métrica | Regresión Logística | Random Forest |
+|---------|:-------------------:|:-------------:|
+| Accuracy (train) | ~0.76 | ~0.92 |
+| Accuracy (test) | ~0.75 | ~0.80 |
+| Precision | ~0.49 | ~0.58 |
+| Recall | ~0.80 | ~0.73 |
+| F1-Score | ~0.61 | ~0.64 |
+| ROC-AUC | ~0.84 | ~0.86 |
+
+**Random Forest** obtiene mejor ROC-AUC y F1-Score → recomendado para scoring general.
+
+**Regresión Logística** obtiene mayor Recall → más adecuada cuando el objetivo es capturar el máximo de churners, dado que en churn el costo de no detectar a un cliente que se va (falso negativo) es mayor que el de alertar erróneamente a uno que se queda (falso positivo).
+
+### Variables Más Importantes
+
+Ambos modelos coinciden en el mismo conjunto de variables clave:
+
+1. `tenure` — el tiempo de contrato es el predictor más fuerte
+2. `MonthlyCharges` — cargos mensuales altos correlacionan con cancelación
+3. `TotalCharges` — inversamente relacionado con el churn
+4. `Contract_Month-to-month` — mayor riesgo que contratos anuales
+5. `Payment_Electronic check` — método de pago más asociado al churn
+
+---
+
+## ▶️ Instrucciones de Ejecución
+
+### Requisitos
+
+Python 3.10 o superior. Instalá las dependencias con:
+
+```bash
+pip install pandas numpy matplotlib seaborn scikit-learn requests
+```
+
+O si usás un entorno virtual:
+
+```bash
+python -m venv venv
+source venv/bin/activate      # Linux / Mac
+venv\Scripts\activate         # Windows
+
+pip install pandas numpy matplotlib seaborn scikit-learn requests
+```
+
+### En Google Colab (recomendado)
+
+1. Abrí [Google Colab](https://colab.research.google.com/)
+2. Subí el archivo `TelecomX_Parte2_ML.ipynb`
+3. Ejecutá todas las celdas en orden con `Runtime → Run all`
+
+> Las librerías necesarias ya vienen preinstaladas en Colab. No se necesita instalar nada adicional.
+
+### En Jupyter Notebook local
+
+```bash
+git clone https://github.com/javito72/telecomx-churn.git
+cd telecomx-churn
+jupyter notebook TelecomX_Parte2_ML.ipynb
+```
+
+### Carga de datos
+
+Los datos se cargan automáticamente al ejecutar la primera celda del notebook. No es necesario descargar ni configurar ningún archivo:
+
+```python
+url = 'https://raw.githubusercontent.com/ingridcristh/challenge2-data-science-LATAM/main/TelecomX_Data.json'
+response = requests.get(url)
+df_raw = pd.DataFrame(response.json())
+```
+
+> ⚠️ Se requiere conexión a internet para la carga inicial de los datos.
+
+### Orden de ejecución recomendado
+
+```
+1. TelecomX_LATAM.ipynb         → EDA y análisis exploratorio (contexto)
+2. TelecomX_Parte2_ML.ipynb     → Modelado predictivo (resultado final)
+```
 
 ---
 
 ## 🛠️ Tecnologías Utilizadas
 
-- **Python 3**
-- **Pandas** — manipulación y limpieza de datos
-- **NumPy** — operaciones numéricas
-- **Matplotlib / Seaborn** — visualización de datos
-- **Scikit-learn** — modelado predictivo y evaluación
-  - `LogisticRegression`
-  - `RandomForestClassifier`
-  - `StandardScaler`
-  - `train_test_split`, `classification_report`, `roc_auc_score`
-
----
-
-## ▶️ Cómo Ejecutar
-
-1. Clona el repositorio:
-```bash
-git clone https://github.com/javito72/telecomx-churn.git
-```
-
-2. Abre los notebooks en [Google Colab](https://colab.research.google.com/) o Jupyter:
-```
-TelecomX_LATAM.ipynb      → Ejecutar primero (EDA)
-TelecomX_Parte2_ML.ipynb  → Ejecutar segundo (ML)
-```
-
-3. Los notebooks se conectan directamente a la fuente de datos vía URL, no se requiere descarga previa del dataset.
+| Librería | Versión recomendada | Uso principal |
+|----------|:------------------:|---------------|
+| `pandas` | 2.0+ | Manipulación y limpieza de datos |
+| `numpy` | 1.24+ | Operaciones numéricas |
+| `matplotlib` | 3.7+ | Visualización de datos |
+| `seaborn` | 0.12+ | Gráficos estadísticos |
+| `scikit-learn` | 1.3+ | Modelos ML, preprocesamiento y evaluación |
+| `requests` | 2.28+ | Carga de datos desde URL |
 
 ---
 
 ## 👤 Autor: Christian Javier Lemos
 
-Desarrollado como parte del **Challenge de Ciencia de Datos – Alura LATAM**  
+Desarrollado como parte del **Challenge de Ciencia de Datos — Alura LATAM**
 
 ---
+
+*"Los datos no mienten: retener un cliente siempre es más barato que adquirir uno nuevo."*
 
 *"Los datos no mienten: retener un cliente es siempre más barato que adquirir uno nuevo."*
 
